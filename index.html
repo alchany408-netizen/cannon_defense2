@@ -296,17 +296,50 @@ function update() {
         et = bet;
     }
 
-    // Fake spawn (5000점 이상)
-    // Fake update
+// Fake spawn (5000점 이상)
+    if (score >= 5000) {
+        if (--fet <= 0) {
+            spawnFake();
+            fet = 60 + (Math.random() * 60 | 0);
+        }
+    }
+
+    // Fake update (새 버전으로)
     for (let i = fakes.length - 1; i >= 0; i--) {
         const f = fakes[i];
-        f.x += f.vx;
-        f.y += f.vy;
+
+        if (f.pause && !f.turned) {
+            const reachedPause = f.vx > 0 ? f.x >= f.pauseX : f.x <= f.pauseX;
+            if (reachedPause && !f.paused) {
+                f.paused = true;
+                f.pauseTimer = 60;
+            }
+            if (f.paused) {
+                f.pauseTimer--;
+                if (f.pauseTimer <= 0) {
+                    f.paused = false;
+                    f.turned = true;
+                }
+            } else {
+                f.x += f.vx;
+                f.y += f.vy;
+            }
+        } else if (f.turn && !f.turned && f.y >= f.turnY) {
+            f.vy = 0;
+            f.vx = f.turnVx;
+            f.turned = true;
+            f.x += f.vx;
+            f.y += f.vy;
+        } else {
+            f.x += f.vx;
+            f.y += f.vy;
+        }
+
         if (f.x < -100 || f.x > 800 || f.y < -100 || f.y > 800) {
             fakes.splice(i, 1);
             continue;
         }
-        // 총알에 맞으면 점수 없이 콤보 끊기고 사라짐
+
         for (let j = bullets.length - 1; j >= 0; j--) {
             const b = bullets[j];
             const dx = (b.x + 10) - (f.x + f.size / 2);
@@ -319,6 +352,8 @@ function update() {
             }
         }
     }
+
+    // Enemy update  ← 이 아래는 그대로
 
     // Enemy update
     for (let i = enemys.length - 1; i >= 0; i--) {
@@ -330,28 +365,7 @@ function update() {
         }
     }
 
-    // Fake update
-    for (let i = fakes.length - 1; i >= 0; i--) {
-        const f = fakes[i];
-        f.x += f.vx;
-        f.y += f.vy;
-        if (f.x < -100 || f.x > 800 || f.y < -100 || f.y > 800) {
-            fakes.splice(i, 1);
-            continue;
-        }
-        // 총알에 맞으면 점수 없이 콤보 끊기고 사라짐
-        for (let j = bullets.length - 1; j >= 0; j--) {
-            const b = bullets[j];
-            const dx = (b.x + 10) - (f.x + f.size / 2);
-            const dy = (b.y + 10) - (f.y + f.size / 2);
-            if (dx * dx + dy * dy <= (10 + f.size / 2) * (10 + f.size / 2)) {
-                fakes.splice(i, 1);
-                bullets.splice(j, 1);
-                combo = 0;
-                break;
-            }
-        }
-    }
+
 
     // Collision
     for (let i = enemys.length - 1; i >= 0; i--) {
