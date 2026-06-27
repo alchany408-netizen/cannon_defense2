@@ -391,8 +391,8 @@ async function loadRanking() {
       headers: { "apikey": SUPA_KEY, "Authorization": "Bearer "+SUPA_KEY }
     });
     const data = await res.json();
-    if (!res.ok) { ul.innerHTML = "<li style="color:#555">오류: "+(data.message||res.status)+"</li>"; return; }
-    if (!Array.isArray(data) || data.length === 0) { ul.innerHTML = "<li style="color:#555">아직 기록 없음</li>"; return; }
+    if (!res.ok) { ul.innerHTML = '<li style="color:#555">오류: '+(data.message||res.status)+'</li>'; return; }
+    if (!Array.isArray(data) || data.length === 0) { ul.innerHTML = '<li style="color:#555">아직 기록 없음</li>'; return; }
     ul.innerHTML = data.map((r,i) => {
       let color;
       if (r.score<500) color=gradeColors.iron;
@@ -407,7 +407,7 @@ async function loadRanking() {
       else color=gradeColors.challenger;
       return "<li><span class="rk">"+(i+1)+"</span><span class="nm" style="color:"+color+"">"+r.nickname+"</span><span class="sc">"+String(r.score).padStart(7,"0")+"</span></li>";
     }).join("");
-  } catch(e) { ul.innerHTML = "<li style="color:#555">불러오기 실패</li>"; }
+  } catch(e) { ul.innerHTML = '<li style="color:#555">불러오기 실패</li>'; }
 }
 
 function saveName() {
