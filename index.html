@@ -192,7 +192,7 @@ function spawnEnemy() {
     const c = ENEMY_SPAWNS[Math.random() * ENEMY_SPAWNS.length | 0];
     
     // 5000점부터 500점 단위로 2씩 줄임, 최소 10
-    const sizeReduction = score >= 5000 ? Math.floor((score - 5000) / 500) * 2 : 0;
+    const sizeReduction = score >= 5000 ? Math.floor((score - 5000) / 500) * 5 : 0;
     const size = Math.max(10, 40 - sizeReduction);
     
     enemys.push({
