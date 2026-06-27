@@ -375,6 +375,7 @@ function update() {
 
         // Base collision
         if (circleCollide(hitboxCX, hitboxCY, hitboxR, ecx, ecy, e.size / 2)) {
+         best = 0;
             if (score > best) {
                 best = 0;
                 localStorage.setItem("best_score", best);
