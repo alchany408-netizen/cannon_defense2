@@ -193,7 +193,7 @@ function spawnEnemy() {
     const c = ENEMY_SPAWNS[Math.random() * ENEMY_SPAWNS.length | 0];
     
     // 5000점부터 500점 단위로 2씩 줄임, 최소 10
-    const sizeReduction = score >= 5000 ? Math.floor((score - 5000) / 500) * 5 : 0;
+    const sizeReduction = score >= 5000 ? Math.floor((score - 5000) / 500) * 3 : 0;
     const size = Math.max(10, 40 - sizeReduction);
     
     enemys.push({
@@ -205,28 +205,58 @@ function spawnEnemy() {
     });
 }
 
- const FAKE_SPAWNS = [
-    { x: -40, y: 580, vx: 1, vy: 0 },  // 히트박스 위쪽으로 지나감
+const FAKE_SPAWNS_BASIC = [
+    { x: -40, y: 580, vx: 1, vy: 0 },
     { x: 700, y: 580, vx: -1, vy: 0 },
     { x: -40, y: 580, vx: 1, vy: 0 },
     { x: 700, y: 580, vx: -1, vy: 0 },
-    { x: 300, y: -40, vx: 0, vy: 1 },  // 히트박스 옆으로 지나감
+    { x: 300, y: -40, vx: 0, vy: 1 },
     { x: 400, y: -40, vx: 0, vy: 1 },
+];
+
+const FAKE_SPAWNS_HARD = [
+    // 빠른 통과 (속도 2배)
+    { x: -40, y: 600, vx: 2, vy: 0, fast: true },
+    { x: 700, y: 600, vx: -2, vy: 0, fast: true },
+    // 대각선으로 비껴감
+    { x: -40, y: 500, vx: 1, vy: 0.8 },
+    { x: 700, y: 500, vx: -1, vy: 0.8 },
+    // L자 (위에서 내려오다 옆으로)
+    { x: 380, y: -40, vx: 0, vy: 1, turn: true, turnY: 580, turnVx: 1 },
+    { x: 300, y: -40, vx: 0, vy: 1, turn: true, turnY: 580, turnVx: -1 },
+    // 멈췄다 이동
+    { x: -40, y: 620, vx: 1, vy: 0, pause: true, pauseX: 200 },
+    { x: 700, y: 620, vx: -1, vy: 0, pause: true, pauseX: 500 },
 ];
 
 function spawnFake() {
     const sp = (Math.random() * 5 | 0) + 2;
-    const c = FAKE_SPAWNS[Math.random() * FAKE_SPAWNS.length | 0];
     const sizeReduction = score >= 5000 ? Math.floor((score - 5000) / 500) * 5 : 0;
     const size = Math.max(10, 40 - sizeReduction);
+
+    let pool = score >= 10000
+        ? [...FAKE_SPAWNS_BASIC, ...FAKE_SPAWNS_HARD]
+        : FAKE_SPAWNS_BASIC;
+
+    const c = pool[Math.random() * pool.length | 0];
+    const multiplier = c.fast ? sp * 2 : sp;
+
     fakes.push({
         x: c.x, y: c.y,
-        vx: (Math.abs(c.vx) === 1) ? c.vx * sp : c.vx,
-        vy: (Math.abs(c.vy) === 1) ? c.vy * sp : c.vy,
-        size: size
+        vx: (Math.abs(c.vx) === 1) ? c.vx * multiplier : c.vx * (sp / 2),
+        vy: (Math.abs(c.vy) === 1) ? c.vy * multiplier : c.vy * (sp / 2),
+        size: size,
+        // 특수 동작
+        turn: c.turn || false,
+        turnY: c.turnY || 0,
+        turnVx: c.turnVx ? c.turnVx * multiplier : 0,
+        turned: false,
+        pause: c.pause || false,
+        pauseX: c.pauseX || 0,
+        paused: false,
+        pauseTimer: 0,
     });
 }
- 
 function update() {
     updateColor();
 
@@ -267,10 +297,26 @@ function update() {
     }
 
     // Fake spawn (5000점 이상)
-    if (score >= 5000) {
-        if (--fet <= 0) {
-            spawnFake();
-            fet = 60 + (Math.random() * 60 | 0);
+    // Fake update
+    for (let i = fakes.length - 1; i >= 0; i--) {
+        const f = fakes[i];
+        f.x += f.vx;
+        f.y += f.vy;
+        if (f.x < -100 || f.x > 800 || f.y < -100 || f.y > 800) {
+            fakes.splice(i, 1);
+            continue;
+        }
+        // 총알에 맞으면 점수 없이 콤보 끊기고 사라짐
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            const b = bullets[j];
+            const dx = (b.x + 10) - (f.x + f.size / 2);
+            const dy = (b.y + 10) - (f.y + f.size / 2);
+            if (dx * dx + dy * dy <= (10 + f.size / 2) * (10 + f.size / 2)) {
+                fakes.splice(i, 1);
+                bullets.splice(j, 1);
+                combo = 0;
+                break;
+            }
         }
     }
 
